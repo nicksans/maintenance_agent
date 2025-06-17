@@ -35,3 +35,7 @@ async def ultravox_response(request: Request):
         await client.post("https://tenantry.app.n8n.cloud/webhook/vendor-response", json=payload)
 
     return { "message": "Webhook forwarded to n8n" }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
