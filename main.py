@@ -15,9 +15,39 @@ class CallRequest(BaseModel):
 
 @app.post("/outgoing-call")
 async def outgoing_call(data: CallRequest):
-    # Placeholder for Twilio call logic
-    print(f"Starting call to: {data.phone_number}")
-    return { "message": "Call initiated", "to": data.phone_number }
+    twilio_sid = os.getenv("TWILIO_ACCOUNT_SID")
+    twilio_token = os.getenv("TWILIO_AUTH_TOKEN")
+    from_number = os.getenv("TWILIO_PHONE_NUMBER")
+
+    to_number = data.phone_number
+    callback_url = "https://voice.ultravox.ai/call"
+
+    # Include details in URL
+    params = {
+        "issue_description": data.issue_description,
+        "availability": data.availability,
+        "ticket_id": data.ticket_id,
+        "vendor_id": data.vendor_id
+    }
+
+    # Convert dict to query string
+    from urllib.parse import urlencode
+    full_url = f"{callback_url}?{urlencode(params)}"
+
+    # Make the Twilio call
+    async with httpx.AsyncClient(auth=(twilio_sid, twilio_token)) as client:
+        response = await client.post(
+            f"https://api.twilio.com/2010-04-01/Accounts/{twilio_sid}/Calls.json",
+            data={
+                "To": to_number,
+                "From": from_number,
+                "Url": full_url,
+            },
+        )
+
+    print(f"Called {to_number}, response status: {response.status_code}")
+    return { "message": "Call initiated", "to": to_number }
+
 
 @app.post("/media-stream")
 async def media_stream(request: Request):
